@@ -1,5 +1,6 @@
 using Parking.Application.Commands;
 using Parking.Application.Dtos;
+using Parking.Domain.Repositories.Filters;
 
 namespace Parking.Application.Abstractions;
 
@@ -14,4 +15,6 @@ public interface IParkingTicketService
     Task<IReadOnlyCollection<ParkingTicketDto>> GetAllTicketsAsync(CancellationToken cancellationToken = default);
 
     Task<ParkingTicketDto?> GetTicketByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<ParkingTicketDto>> FilterTicketsAsync(ParkingTicketFilter filter, CancellationToken cancellationToken = default);
 }

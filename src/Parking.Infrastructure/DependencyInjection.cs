@@ -2,7 +2,10 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Parking.Application.Authentication;
+
 using Parking.Application.Abstractions.Security;
+
 using Parking.Domain.Repositories;
 using Parking.Infrastructure.Persistence;
 using Parking.Infrastructure.Repositories;
@@ -41,6 +44,8 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IParkingTicketRepository, ParkingTicketRepository>();
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 
         services.AddScoped<IMonthlyTargetRepository, MonthlyTargetRepository>();
 

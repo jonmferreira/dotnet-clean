@@ -1,6 +1,8 @@
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Parking.Domain.Entities;
 using Parking.Domain.Repositories;
+using Parking.Domain.Repositories.Filters;
 using Parking.Infrastructure.Persistence;
 
 namespace Parking.Infrastructure.Repositories;
@@ -38,6 +40,77 @@ public sealed class ParkingTicketRepository : IParkingTicketRepository
         return await _dbContext.ParkingTickets
             .AsNoTracking()
             .Where(ticket => ticket.EntryAt >= from && ticket.EntryAt < to)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<ParkingTicket>> FilterAsync(ParkingTicketFilter filter, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(filter);
+
+        IQueryable<ParkingTicket> query = _dbContext.ParkingTickets.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(filter.PlateEquals))
+        {
+            query = query.Where(ticket => ticket.Plate == filter.PlateEquals);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.PlateNotEquals))
+        {
+            query = query.Where(ticket => ticket.Plate != filter.PlateNotEquals);
+        }
+
+        if (filter.PlateIn is { Count: > 0 })
+        {
+            query = query.Where(ticket => filter.PlateIn.Contains(ticket.Plate));
+        }
+
+        if (filter.PlateNotIn is { Count: > 0 })
+        {
+            query = query.Where(ticket => !filter.PlateNotIn.Contains(ticket.Plate));
+        }
+
+        if (filter.TotalAmountEquals is decimal amountEquals)
+        {
+            query = query.Where(ticket => ticket.TotalAmount.HasValue && ticket.TotalAmount.Value == amountEquals);
+        }
+
+        if (filter.TotalAmountNotEquals is decimal amountNotEquals)
+        {
+            query = query.Where(ticket => !ticket.TotalAmount.HasValue || ticket.TotalAmount.Value != amountNotEquals);
+        }
+
+        if (filter.TotalAmountGreaterThan is decimal amountGreaterThan)
+        {
+            query = query.Where(ticket => ticket.TotalAmount.HasValue && ticket.TotalAmount.Value > amountGreaterThan);
+        }
+
+        if (filter.TotalAmountGreaterThanOrEqual is decimal amountGreaterThanOrEqual)
+        {
+            query = query.Where(ticket => ticket.TotalAmount.HasValue && ticket.TotalAmount.Value >= amountGreaterThanOrEqual);
+        }
+
+        if (filter.TotalAmountLessThan is decimal amountLessThan)
+        {
+            query = query.Where(ticket => ticket.TotalAmount.HasValue && ticket.TotalAmount.Value < amountLessThan);
+        }
+
+        if (filter.TotalAmountLessThanOrEqual is decimal amountLessThanOrEqual)
+        {
+            query = query.Where(ticket => ticket.TotalAmount.HasValue && ticket.TotalAmount.Value <= amountLessThanOrEqual);
+        }
+
+        if (filter.EntryAtBetween is not null)
+        {
+            query = query.Where(ticket => ticket.EntryAt >= filter.EntryAtBetween.From && ticket.EntryAt <= filter.EntryAtBetween.To);
+        }
+
+        if (filter.ExitAtNotBetween is not null)
+        {
+            query = query.Where(ticket => !ticket.ExitAt.HasValue || ticket.ExitAt.Value < filter.ExitAtNotBetween.From || ticket.ExitAt.Value > filter.ExitAtNotBetween.To);
+        }
+
+        return await query
+            .OrderByDescending(ticket => ticket.EntryAt)
             .ToListAsync(cancellationToken);
     }
 
