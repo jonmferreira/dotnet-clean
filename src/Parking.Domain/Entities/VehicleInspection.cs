@@ -1,6 +1,6 @@
 namespace Parking.Domain.Entities;
 
-public sealed class VehicleInspection
+public class VehicleInspection
 {
     private VehicleInspection()
     {
@@ -66,7 +66,7 @@ public sealed class VehicleInspection
 
     public string? HarshImpactsPhotoUrl { get; private set; }
 
-    public ParkingTicket? Ticket { get; private set; }
+    public virtual ParkingTicket? Ticket { get; private set; }
 
     public void UpdateChecklist(
         bool noScratches,

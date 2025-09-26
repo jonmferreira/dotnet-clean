@@ -6,6 +6,12 @@ public interface IParkingTicketRepository
 {
     Task<ParkingTicket?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<ParkingTicket?> GetByIdWithInspectionLazyAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<ParkingTicket?> GetByIdWithInspectionEagerAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<ParkingTicket?> GetByIdWithInspectionExplicitAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<ParkingTicket?> GetActiveByPlateAsync(string plate, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<ParkingTicket>> GetAllAsync(CancellationToken cancellationToken = default);

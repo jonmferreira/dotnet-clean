@@ -32,8 +32,8 @@ public sealed class VehicleInspectionConfiguration : IEntityTypeConfiguration<Ve
             .IsUnique();
 
         builder.HasOne(inspection => inspection.Ticket)
-            .WithMany()
-            .HasForeignKey(inspection => inspection.TicketId)
+            .WithOne(ticket => ticket.Inspection)
+            .HasForeignKey<VehicleInspection>(inspection => inspection.TicketId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
