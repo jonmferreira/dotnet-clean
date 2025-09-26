@@ -60,3 +60,28 @@ dotnet test
 ```
 
 Os testes cobrem o cálculo acumulativo de tarifas para garantir a regra de negócio proposta.
+
+## Executando com Docker
+
+### Imagem da API
+
+O repositório inclui um `Dockerfile` baseado no .NET 8 SDK/ASP.NET que restaura as dependências, publica a aplicação e expõe as portas padrão (`8080` e `8081`). Para gerar a imagem execute:
+
+```bash
+docker build -t parking-api .
+```
+
+### Subindo API e banco com Docker Compose
+
+O arquivo `docker-compose.yml` define dois serviços:
+
+- **db**: SQL Server 2022 com um _healthcheck_ que aguarda o banco estar pronto antes de liberar a API. A senha padrão (`Your_strong_password123`) deve ser alterada em produção.
+- **api**: a aplicação ASP.NET configurada para usar SQL Server quando as variáveis `Database__Provider` e `ConnectionStrings__DefaultConnection` são definidas.
+
+Para subir ambos os serviços execute:
+
+```bash
+docker compose up --build
+```
+
+A API ficará disponível em `http://localhost:8080` quando o banco estiver saudável.
