@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Parking.Api.Mappings;
 using Parking.Api.Models.Requests;
@@ -9,6 +10,7 @@ namespace Parking.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public sealed class TicketsController : ControllerBase
 {
     private readonly IParkingTicketService _parkingTicketService;
