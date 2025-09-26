@@ -46,6 +46,12 @@ A documentação interativa (Swagger) estará disponível em `https://localhost:
 - `GET /api/tickets` – lista todos os tickets registrados.
 - `GET /api/tickets/{id}` – consulta um ticket pelo identificador.
 - `GET /api/tickets/active/{plate}` – consulta o ticket ativo de uma placa.
+- `POST /api/vehicleinspections` – registra o checklist de inspeção de um ticket existente.
+- `PUT /api/vehicleinspections/{id}` – atualiza um checklist já registrado.
+- `GET /api/vehicleinspections/{id}` – consulta um checklist específico.
+- `GET /api/vehicleinspections/ticket/{ticketId}` – consulta o checklist vinculado a um ticket.
+
+Os checklists registram o estado visual do veículo (arranhões, itens perdidos, chave perdida e batidas fortes). Sempre que algum item for reprovado (`false`), é obrigatório informar a URL da foto de evidência correspondente.
 
 ## Testes
 
@@ -54,3 +60,28 @@ dotnet test
 ```
 
 Os testes cobrem o cálculo acumulativo de tarifas para garantir a regra de negócio proposta.
+
+## Executando com Docker
+
+### Imagem da API
+
+O repositório inclui um `Dockerfile` baseado no .NET 8 SDK/ASP.NET que restaura as dependências, publica a aplicação e expõe as portas padrão (`8080` e `8081`). Para gerar a imagem execute:
+
+```bash
+docker build -t parking-api .
+```
+
+### Subindo API e banco com Docker Compose
+
+O arquivo `docker-compose.yml` define dois serviços:
+
+- **db**: SQL Server 2022 com um _healthcheck_ que aguarda o banco estar pronto antes de liberar a API. A senha padrão (`Your_strong_password123`) deve ser alterada em produção.
+- **api**: a aplicação ASP.NET configurada para usar SQL Server quando as variáveis `Database__Provider` e `ConnectionStrings__DefaultConnection` são definidas.
+
+Para subir ambos os serviços execute:
+
+```bash
+docker compose up --build
+```
+
+A API ficará disponível em `http://localhost:8080` quando o banco estiver saudável.

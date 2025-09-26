@@ -10,7 +10,11 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IParkingTicketService, ParkingTicketService>();
+
         services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+
+        services.AddScoped<IVehicleInspectionService, VehicleInspectionService>();
+
         services.AddSingleton<IParkingFeeCalculator, ParkingFeeCalculator>();
         return services;
     }
