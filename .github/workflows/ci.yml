@@ -5,6 +5,7 @@ on:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -16,13 +17,217 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore
-        run: dotnet restore Parking.sln
-
-      - name: Verify formatting
-        run: dotnet format Parking.sln --verify-no-changes
+        id: restore
+        run: |
+          start=$(date +%s)
+          dotnet restore Parking.sln
+          end=$(date +%s)
+          duration=$((end - start))
+          printf "duration=%02d:%02d\n" $((duration/60)) $((duration%60)) >> "$GITHUB_OUTPUT"
 
       - name: Build
-        run: dotnet build Parking.sln --configuration Release --no-restore
+        id: build_step
+        run: |
+          start=$(date +%s)
+          dotnet build Parking.sln --configuration Release --no-restore
+          end=$(date +%s)
+          duration=$((end - start))
+          printf "duration=%02d:%02d\n" $((duration/60)) $((duration%60)) >> "$GITHUB_OUTPUT"
 
-      - name: Test
-        run: dotnet test Parking.sln --configuration Release --no-build --verbosity normal
+      - name: Publicar resumo
+        if: always()
+        env:
+          RESTORE_DURATION: ${{ steps.restore.outputs.duration }}
+          RESTORE_OUTCOME: ${{ steps.restore.outcome }}
+          BUILD_DURATION: ${{ steps.build_step.outputs.duration }}
+          BUILD_OUTCOME: ${{ steps.build_step.outcome }}
+        run: |
+          icon() {
+            case "$1" in
+              success) printf '✅' ;;
+              failure) printf '❌' ;;
+              cancelled|skipped) printf '⚠️' ;;
+              *) printf '⚠️' ;;
+            esac
+          }
+
+          restore_icon=$(icon "$RESTORE_OUTCOME")
+          build_icon=$(icon "$BUILD_OUTCOME")
+
+          {
+            echo "### Build"
+            echo ""
+            echo "| Descrição | Tempo | Resultado |"
+            echo "| --- | --- | --- |"
+            echo "| Restore | ${RESTORE_DURATION:-N/A} | ${restore_icon} |"
+            echo "| Build | ${BUILD_DURATION:-N/A} | ${build_icon} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        id: lint_restore
+        run: |
+          start=$(date +%s)
+          dotnet restore Parking.sln
+          end=$(date +%s)
+          duration=$((end - start))
+          printf "duration=%02d:%02d\n" $((duration/60)) $((duration%60)) >> "$GITHUB_OUTPUT"
+
+      - name: Verificar formatação
+        id: format_check
+        run: |
+          start=$(date +%s)
+          dotnet format Parking.sln --verify-no-changes
+          end=$(date +%s)
+          duration=$((end - start))
+          printf "duration=%02d:%02d\n" $((duration/60)) $((duration%60)) >> "$GITHUB_OUTPUT"
+
+      - name: Publicar resumo
+        if: always()
+        env:
+          RESTORE_DURATION: ${{ steps.lint_restore.outputs.duration }}
+          RESTORE_OUTCOME: ${{ steps.lint_restore.outcome }}
+          FORMAT_DURATION: ${{ steps.format_check.outputs.duration }}
+          FORMAT_OUTCOME: ${{ steps.format_check.outcome }}
+        run: |
+          icon() {
+            case "$1" in
+              success) printf '✅' ;;
+              failure) printf '❌' ;;
+              cancelled|skipped) printf '⚠️' ;;
+              *) printf '⚠️' ;;
+            esac
+          }
+
+          restore_icon=$(icon "$RESTORE_OUTCOME")
+          format_icon=$(icon "$FORMAT_OUTCOME")
+
+          {
+            echo "### Lint"
+            echo ""
+            echo "| Descrição | Tempo | Resultado |"
+            echo "| --- | --- | --- |"
+            echo "| Restore | ${RESTORE_DURATION:-N/A} | ${restore_icon} |"
+            echo "| dotnet format | ${FORMAT_DURATION:-N/A} | ${format_icon} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    name: Testes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        id: test_restore
+        run: |
+          start=$(date +%s)
+          dotnet restore Parking.sln
+          end=$(date +%s)
+          duration=$((end - start))
+          printf "duration=%02d:%02d\n" $((duration/60)) $((duration%60)) >> "$GITHUB_OUTPUT"
+
+      - name: Testes
+        id: test
+        run: |
+          start=$(date +%s)
+          dotnet test Parking.sln --configuration Release --results-directory TestResults --collect:"XPlat Code Coverage" --verbosity normal
+          end=$(date +%s)
+          duration=$((end - start))
+          printf "duration=%02d:%02d\n" $((duration/60)) $((duration%60)) >> "$GITHUB_OUTPUT"
+
+      - name: Extrair cobertura
+        id: coverage
+        if: ${{ always() && steps.test.outcome == 'success' }}
+        run: |
+          python <<'PY'
+          import glob
+          import os
+          import xml.etree.ElementTree as ET
+
+          paths = glob.glob('TestResults/**/coverage.cobertura.xml', recursive=True)
+          if not paths:
+              raise SystemExit('Arquivo de cobertura não encontrado.')
+
+          tree = ET.parse(paths[0])
+          root = tree.getroot()
+          line_rate = root.get('line-rate') or '0'
+          coverage = round(float(line_rate) * 100, 2)
+          display = f"{coverage:.2f}".rstrip('0').rstrip('.')
+
+          if coverage >= 90:
+              color = 'brightgreen'
+          elif coverage >= 75:
+              color = 'green'
+          elif coverage >= 60:
+              color = 'yellow'
+          else:
+              color = 'red'
+
+          badge_label = display.replace('.', '%2E') + '%25'
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
+              fh.write(f"percent={display}\n")
+              fh.write(f"badge_label={badge_label}\n")
+              fh.write(f"badge_color={color}\n")
+          PY
+
+      - name: Publicar resumo
+        if: always()
+        env:
+          RESTORE_DURATION: ${{ steps.test_restore.outputs.duration }}
+          RESTORE_OUTCOME: ${{ steps.test_restore.outcome }}
+          TEST_DURATION: ${{ steps.test.outputs.duration }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          COVERAGE_PERCENT: ${{ steps.coverage.outputs.percent }}
+          COVERAGE_BADGE_LABEL: ${{ steps.coverage.outputs.badge_label }}
+          COVERAGE_BADGE_COLOR: ${{ steps.coverage.outputs.badge_color }}
+        run: |
+          icon() {
+            case "$1" in
+              success) printf '✅' ;;
+              failure) printf '❌' ;;
+              cancelled|skipped) printf '⚠️' ;;
+              *) printf '⚠️' ;;
+            esac
+          }
+
+          restore_icon=$(icon "$RESTORE_OUTCOME")
+          test_icon=$(icon "$TEST_OUTCOME")
+
+          {
+            echo "### Testes"
+            echo ""
+            echo "| Descrição | Tempo | Resultado |"
+            echo "| --- | --- | --- |"
+            echo "| Restore | ${RESTORE_DURATION:-N/A} | ${restore_icon} |"
+            echo "| Testes | ${TEST_DURATION:-N/A} | ${test_icon} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "$COVERAGE_PERCENT" ]; then
+            {
+              echo ""
+              echo "#### Cobertura"
+              echo ""
+              echo "| Coverage | Badge |"
+              echo "| --- | --- |"
+              echo "| ${COVERAGE_PERCENT}% | ![Coverage](https://img.shields.io/badge/Coverage-${COVERAGE_BADGE_LABEL}-${COVERAGE_BADGE_COLOR}) |"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
