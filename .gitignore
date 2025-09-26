@@ -1,0 +1,14 @@
+bin/
+obj/
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userprefs
+*.csproj.user
+*.sln.docstates
+TestResults/
+/.vs/
+/.idea/
+.vscode/
+.nuget/
