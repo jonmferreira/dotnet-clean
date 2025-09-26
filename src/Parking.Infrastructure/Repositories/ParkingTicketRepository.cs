@@ -47,6 +47,34 @@ public sealed class ParkingTicketRepository : IParkingTicketRepository
             .FirstOrDefaultAsync(ticket => ticket.Id == id, cancellationToken);
     }
 
+    public async Task<ParkingTicket?> GetByIdWithInspectionLazyAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.ParkingTickets
+            .FirstOrDefaultAsync(ticket => ticket.Id == id, cancellationToken);
+    }
+
+    public async Task<ParkingTicket?> GetByIdWithInspectionEagerAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.ParkingTickets
+            .Include(ticket => ticket.Inspection)
+            .FirstOrDefaultAsync(ticket => ticket.Id == id, cancellationToken);
+    }
+
+    public async Task<ParkingTicket?> GetByIdWithInspectionExplicitAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var ticket = await _dbContext.ParkingTickets
+            .FirstOrDefaultAsync(ticket => ticket.Id == id, cancellationToken);
+
+        if (ticket is not null)
+        {
+            await _dbContext.Entry(ticket)
+                .Reference(t => t.Inspection)
+                .LoadAsync(cancellationToken);
+        }
+
+        return ticket;
+    }
+
     public async Task<ParkingTicket?> GetActiveByPlateAsync(string plate, CancellationToken cancellationToken = default)
     {
         return await _dbContext.ParkingTickets
