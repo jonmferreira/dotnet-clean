@@ -12,6 +12,8 @@ public sealed class ParkingDbContext : DbContext
 
     public DbSet<ParkingTicket> ParkingTickets => Set<ParkingTicket>();
 
+    public DbSet<MonthlyTarget> MonthlyTargets => Set<MonthlyTarget>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
