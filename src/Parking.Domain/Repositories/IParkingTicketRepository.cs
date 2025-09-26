@@ -1,4 +1,5 @@
 using Parking.Domain.Entities;
+using Parking.Domain.Repositories.Filters;
 
 namespace Parking.Domain.Repositories;
 
@@ -17,6 +18,8 @@ public interface IParkingTicketRepository
     Task<IReadOnlyCollection<ParkingTicket>> GetAllAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<ParkingTicket>> GetByPeriodAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<ParkingTicket>> FilterAsync(ParkingTicketFilter filter, CancellationToken cancellationToken = default);
 
     Task AddAsync(ParkingTicket ticket, CancellationToken cancellationToken = default);
 

@@ -72,6 +72,28 @@ public sealed class TicketsController : ControllerBase
         return Ok(tickets.Select(ticket => ticket.ToResponse()));
     }
 
+    [HttpPost("filter")]
+    [ProducesResponseType(typeof(IEnumerable<ParkingTicketResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IEnumerable<ParkingTicketResponse>>> FilterAsync([FromBody] TicketFilterRequest request, CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            return BadRequest("A filter request body is required.");
+        }
+
+        try
+        {
+            var filter = request.ToDomainFilter();
+            var tickets = await _parkingTicketService.FilterTicketsAsync(filter, cancellationToken);
+            return Ok(tickets.Select(ticket => ticket.ToResponse()));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ParkingTicketResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
