@@ -2,9 +2,11 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Parking.Application.Abstractions.Security;
 using Parking.Domain.Repositories;
 using Parking.Infrastructure.Persistence;
 using Parking.Infrastructure.Repositories;
+using Parking.Infrastructure.Authentication;
 
 namespace Parking.Infrastructure;
 
@@ -12,6 +14,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+
         services.AddDbContext<ParkingDbContext>(options =>
         {
             options.UseLazyLoadingProxies();
@@ -41,6 +45,12 @@ public static class DependencyInjection
         services.AddScoped<IMonthlyTargetRepository, MonthlyTargetRepository>();
 
         services.AddScoped<IVehicleInspectionRepository, VehicleInspectionRepository>();
+
+        services.AddScoped<IUserRepository, UserRepository>();
+
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
 
         return services;

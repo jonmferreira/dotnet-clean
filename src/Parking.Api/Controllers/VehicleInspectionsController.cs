@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Parking.Api.Mappings;
@@ -10,6 +11,7 @@ namespace Parking.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public sealed class VehicleInspectionsController : ControllerBase
 {
     private readonly IVehicleInspectionService _vehicleInspectionService;

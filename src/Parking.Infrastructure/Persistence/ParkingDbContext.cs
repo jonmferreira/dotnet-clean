@@ -17,6 +17,8 @@ public sealed class ParkingDbContext : DbContext
 
     public DbSet<VehicleInspection> VehicleInspections => Set<VehicleInspection>();
 
+    public DbSet<User> Users => Set<User>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
