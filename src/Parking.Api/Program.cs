@@ -2,14 +2,19 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Parking.Api.Services;
 using Parking.Application;
 using Parking.Infrastructure;
 using Parking.Infrastructure.Authentication;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+Settings.License = LicenseType.Community;
+
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddSingleton<ITicketPdfExporter, TicketPdfExporter>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
