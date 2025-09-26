@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Parking.Api.Mappings;
 using Parking.Api.Models.Requests;
@@ -8,6 +9,7 @@ namespace Parking.Api.Controllers;
 
 [ApiController]
 [Route("api/admin/dashboard")]
+[Authorize]
 public sealed class AdminDashboardController : ControllerBase
 {
     private readonly IAdminDashboardService _adminDashboardService;

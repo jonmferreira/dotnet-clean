@@ -15,6 +15,8 @@ public static class DependencyInjection
 
         services.AddScoped<IVehicleInspectionService, VehicleInspectionService>();
 
+        services.AddScoped<IAuthService, AuthService>();
+
         services.AddSingleton<IParkingFeeCalculator, ParkingFeeCalculator>();
         return services;
     }
