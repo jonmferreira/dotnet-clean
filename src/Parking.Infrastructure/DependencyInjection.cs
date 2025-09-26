@@ -18,6 +18,7 @@ public static class DependencyInjection
 
         services.AddDbContext<ParkingDbContext>(options =>
         {
+            options.UseLazyLoadingProxies();
             var provider = configuration["Database:Provider"];
             var connectionString = configuration.GetConnectionString("DefaultConnection")
                                     ?? configuration["Database:ConnectionString"];

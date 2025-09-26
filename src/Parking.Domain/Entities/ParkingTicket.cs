@@ -38,6 +38,8 @@ public class ParkingTicket
 
     public bool IsActive => ExitAt is null;
 
+    public virtual VehicleInspection? Inspection { get; private set; }
+
     public void Close(DateTimeOffset exitAt, decimal totalAmount)
     {
         if (!IsActive)
