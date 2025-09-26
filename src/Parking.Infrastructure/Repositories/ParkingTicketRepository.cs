@@ -28,6 +28,19 @@ public sealed class ParkingTicketRepository : IParkingTicketRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<ParkingTicket>> GetByPeriodAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default)
+    {
+        if (to < from)
+        {
+            throw new ArgumentException("The end date must be greater than or equal to the start date.", nameof(to));
+        }
+
+        return await _dbContext.ParkingTickets
+            .AsNoTracking()
+            .Where(ticket => ticket.EntryAt >= from && ticket.EntryAt < to)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<ParkingTicket?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbContext.ParkingTickets

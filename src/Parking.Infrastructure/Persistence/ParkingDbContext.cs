@@ -12,7 +12,11 @@ public sealed class ParkingDbContext : DbContext
 
     public DbSet<ParkingTicket> ParkingTickets => Set<ParkingTicket>();
 
+
+    public DbSet<MonthlyTarget> MonthlyTargets => Set<MonthlyTarget>();
+
     public DbSet<VehicleInspection> VehicleInspections => Set<VehicleInspection>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

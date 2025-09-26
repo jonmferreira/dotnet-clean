@@ -36,7 +36,11 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IParkingTicketRepository, ParkingTicketRepository>();
+
+        services.AddScoped<IMonthlyTargetRepository, MonthlyTargetRepository>();
+
         services.AddScoped<IVehicleInspectionRepository, VehicleInspectionRepository>();
+
 
         return services;
     }
