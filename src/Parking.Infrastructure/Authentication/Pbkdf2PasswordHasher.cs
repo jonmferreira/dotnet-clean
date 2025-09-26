@@ -30,7 +30,7 @@ public sealed class Pbkdf2PasswordHasher : IPasswordHasher
             KeySize);
 
         return string.Join(
-            '.',
+            ".",
             DefaultIterations.ToString(CultureInfo.InvariantCulture),
             Convert.ToBase64String(salt),
             Convert.ToBase64String(hash));
