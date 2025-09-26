@@ -76,9 +76,9 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
             Convert.ToBase64String(signature));
 
         return new JwtTokenResult(token, expiresAt, userId, normalizedEmail, sanitizedRoles);
-   }
+    }
 
- 
+
 
     public JwtTokenResult GenerateToken(User user)
     {
