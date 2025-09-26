@@ -46,6 +46,12 @@ A documentação interativa (Swagger) estará disponível em `https://localhost:
 - `GET /api/tickets` – lista todos os tickets registrados.
 - `GET /api/tickets/{id}` – consulta um ticket pelo identificador.
 - `GET /api/tickets/active/{plate}` – consulta o ticket ativo de uma placa.
+- `POST /api/vehicleinspections` – registra o checklist de inspeção de um ticket existente.
+- `PUT /api/vehicleinspections/{id}` – atualiza um checklist já registrado.
+- `GET /api/vehicleinspections/{id}` – consulta um checklist específico.
+- `GET /api/vehicleinspections/ticket/{ticketId}` – consulta o checklist vinculado a um ticket.
+
+Os checklists registram o estado visual do veículo (arranhões, itens perdidos, chave perdida e batidas fortes). Sempre que algum item for reprovado (`false`), é obrigatório informar a URL da foto de evidência correspondente.
 
 ## Testes
 
