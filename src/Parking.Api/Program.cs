@@ -6,6 +6,7 @@ using Parking.Api.Services;
 using Parking.Application;
 using Parking.Infrastructure;
 using Parking.Infrastructure.Authentication;
+using QuestPDF;
 using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
