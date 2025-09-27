@@ -24,8 +24,6 @@ jobs:
               - 'Parking.sln'
               - 'Dockerfile'
               - 'docker-compose.yml'
-              - '.github/workflows/**'
-              - '.github/scripts/**'
 
       - name: Publicar resumo
         run: |
