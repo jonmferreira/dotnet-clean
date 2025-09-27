@@ -9,6 +9,8 @@ using Parking.Domain.Repositories;
 using Parking.Infrastructure.Authentication;
 using Parking.Infrastructure.Persistence;
 using Parking.Infrastructure.Repositories;
+using Parking.Infrastructure.ExternalServices.Cnpja;
+using Parking.Application.Abstractions;
 
 namespace Parking.Infrastructure;
 
@@ -57,6 +59,33 @@ public static class DependencyInjection
             options.UseInMemoryDatabase(databaseName);
         });
 
+        services
+            .AddOptions<CnpjaOptions>()
+            .Bind(configuration.GetSection(CnpjaOptions.SectionName))
+            .PostConfigure(static options =>
+            {
+                options.BaseUrl = string.IsNullOrWhiteSpace(options.BaseUrl)
+                    ? CnpjaOptions.DefaultBaseUrl
+                    : EnsureEndsWithSlash(options.BaseUrl.Trim());
+
+                options.CompanyEndpoint = string.IsNullOrWhiteSpace(options.CompanyEndpoint)
+                    ? CnpjaOptions.DefaultCompanyEndpoint
+                    : options.CompanyEndpoint.Trim().TrimStart('/');
+            })
+            .Validate(
+                static options => Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out _),
+                "CNPJa base URL must be a valid absolute URI.")
+            .ValidateOnStart();
+
+        services
+            .AddHttpClient<CnpjaOpenApiClient>((sp, client) =>
+            {
+                var options = sp.GetRequiredService<IOptions<CnpjaOptions>>().Value;
+                client.BaseAddress = new Uri(options.BaseUrl);
+            });
+
+        services.AddScoped<ICnpjLookupService>(static sp => sp.GetRequiredService<CnpjaOpenApiClient>());
+
         services.AddScoped<IParkingTicketRepository, ParkingTicketRepository>();
         services.AddScoped<IMonthlyTargetRepository, MonthlyTargetRepository>();
         services.AddScoped<IVehicleInspectionRepository, VehicleInspectionRepository>();
@@ -73,5 +102,12 @@ public static class DependencyInjection
             static sp => sp.GetRequiredService<JwtTokenGenerator>());
 
         return services;
+    }
+
+    private static string EnsureEndsWithSlash(string value)
+    {
+        return value.EndsWith("/", StringComparison.Ordinal)
+            ? value
+            : string.Concat(value, "/");
     }
 }

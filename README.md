@@ -50,6 +50,7 @@ A documentação interativa (Swagger) estará disponível em `https://localhost:
 - `PUT /api/vehicleinspections/{id}` – atualiza um checklist já registrado.
 - `GET /api/vehicleinspections/{id}` – consulta um checklist específico.
 - `GET /api/vehicleinspections/ticket/{ticketId}` – consulta o checklist vinculado a um ticket.
+- `GET /api/cnpj/{cnpj}` – consulta dados cadastrais de uma empresa via CNPJa Open API.
 
 Os checklists registram o estado visual do veículo (arranhões, itens perdidos, chave perdida e batidas fortes). Sempre que algum item for reprovado (`false`), é obrigatório informar a URL da foto de evidência correspondente.
 
@@ -60,6 +61,13 @@ dotnet test
 ```
 
 Os testes cobrem o cálculo acumulativo de tarifas para garantir a regra de negócio proposta.
+
+## Integração com a CNPJa Open API
+
+A seção `Cnpja` no `appsettings.json` define a URL base e o caminho do recurso para consultas de CNPJ.
+Caso possua um token de acesso, informe-o no campo `Token` (ou defina a variável de ambiente
+`Cnpja__Token`). O endpoint `GET /api/cnpj/{cnpj}` utiliza essas configurações para buscar as
+informações da empresa diretamente na API pública.
 
 ## Instalando o .NET SDK no container
 
