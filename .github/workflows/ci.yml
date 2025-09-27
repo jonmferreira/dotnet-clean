@@ -4,17 +4,60 @@ on:
   pull_request:
 
 jobs:
+  changes:
+    name: Verificar alterações relevantes
+    runs-on: ubuntu-latest
+    outputs:
+      run_ci: ${{ steps.filter.outputs.run_ci }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Filtrar arquivos
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            run_ci:
+              - 'src/**'
+              - 'tests/**'
+              - 'Parking.sln'
+              - 'Dockerfile'
+              - 'docker-compose.yml'
+
+      - name: Publicar resumo
+        run: |
+          if [ "${{ steps.filter.outputs.run_ci }}" = 'true' ]; then
+            {
+              echo "### CI"
+              echo
+              echo "Alterações relevantes detectadas. Os jobs de build, lint e testes serão executados."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "### CI"
+              echo
+              echo "Nenhuma alteração relevante detectada. Os jobs de build, lint e testes serão ignorados."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   lint:
     name: Lint
+    needs: changes
+    if: needs.changes.outputs.run_ci == 'true'
     uses: ./.github/workflows/lint.yml
     secrets: inherit
 
   build:
     name: Build
+    needs: changes
+    if: needs.changes.outputs.run_ci == 'true'
     uses: ./.github/workflows/build.yml
     secrets: inherit
 
   test:
     name: Testes
+    needs: changes
+    if: needs.changes.outputs.run_ci == 'true'
     uses: ./.github/workflows/test.yml
     secrets: inherit
