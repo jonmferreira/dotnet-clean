@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint
+    uses: ./.github/workflows/lint.yml
+    secrets: inherit
+
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+
+  test:
+    name: Testes
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
