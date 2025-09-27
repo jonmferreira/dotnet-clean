@@ -35,8 +35,8 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
         EnsureAssetExists(_backgroundImagePath, "export-background.png");
         EnsureAssetExists(_emptyStateImagePath, "no-data.png");
 
-        var backgroundImage = ImageSource.FromFile(_backgroundImagePath);
-        var emptyStateImage = ImageSource.FromFile(_emptyStateImagePath);
+        var backgroundImage = Image.FromFile(_backgroundImagePath);
+        var emptyStateImage = Image.FromFile(_emptyStateImagePath);
 
         return Document.Create(document =>
         {
@@ -47,7 +47,7 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
                 page.MarginTop(160);
                 page.MarginBottom(160);
                 page.DefaultTextStyle(TextStyle.Default.FontSize(11));
-                page.Background().Image(backgroundImage, ImageScaling.FitArea);
+                page.Background().Image(backgroundImage).FitArea();
                 page.Content().PaddingHorizontal(15).Element(container =>
                 {
                     if (ticketList.Count == 0)
@@ -78,17 +78,21 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
                     {
                         text.Span("Cuidado ao compartilhar conteúdo sensível da empresa, descarte o documento após uso conforme as normas da empresa.")
                             .FontSize(9)
-                            .FontColor(Colors.Red.Medium)
-                            .WrapAnywhere();
+                            .FontColor(Colors.Red.Medium);
                     });
 
-                    row.ConstantItem(110).AlignRight().Text(text =>
+                    row.ConstantItem(110).Element(item =>
                     {
-                        text.Span("Página ");
-                        text.CurrentPageNumber();
-                        text.Span(" de ");
-                        text.TotalPages();
-                    }).FontSize(9).FontColor(Colors.Grey.Darken3);
+                        item.AlignRight();
+                        item.Text(text =>
+                        {
+                            text.DefaultTextStyle(TextStyle.Default.FontSize(9).FontColor(Colors.Grey.Darken3));
+                            text.Span("Página ");
+                            text.CurrentPageNumber();
+                            text.Span(" de ");
+                            text.TotalPages();
+                        });
+                    });
                 });
             });
         }).GeneratePdf();
@@ -132,7 +136,7 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
 
             foreach (var ticket in tickets)
             {
-                table.Cell().Element(ContentCell).Text(ticket.Plate).WrapAnywhere();
+                table.Cell().Element(ContentCell).Text(ticket.Plate);
                 table.Cell().Element(ContentCell).Text(FormatDate(ticket.EntryAt));
                 table.Cell().Element(ContentCell).Text(FormatNullableDate(ticket.ExitAt));
                 table.Cell().Element(ContentCell).Text(FormatDuration(ticket.DurationInMinutes));
@@ -142,7 +146,7 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
         });
     }
 
-    private static void BuildEmptyState(IContainer container, ImageSource emptyStateImage)
+    private static void BuildEmptyState(IContainer container, Image emptyStateImage)
     {
         container.Column(column =>
         {
@@ -152,7 +156,8 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
                 imageContainer
                     .Width(320)
                     .Height(320)
-                    .Image(emptyStateImage, ImageScaling.FitArea);
+                    .Image(emptyStateImage)
+                    .FitArea();
             });
             column.Item().AlignCenter().Text("Sem dados para exportar")
                 .FontSize(18)
