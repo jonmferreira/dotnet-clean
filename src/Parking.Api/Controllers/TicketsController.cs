@@ -88,7 +88,7 @@ public sealed class TicketsController : ControllerBase
         var fileName = $"tickets-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.pdf";
         return File(pdfBytes, "application/pdf", fileName);
     }
-    
+
     [HttpPost("filter")]
     [ProducesResponseType(typeof(IEnumerable<ParkingTicketResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
