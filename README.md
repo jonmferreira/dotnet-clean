@@ -68,8 +68,8 @@ ambiente do container não possua o SDK instalado, siga os passos abaixo (válid
 baseadas em Debian/Ubuntu):
 
 ```bash
-# Adiciona o repositório oficial da Microsoft
-wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+# Adiciona o repositório oficial da Microsoft (ajuste a versão se necessário)
+wget https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 sudo dpkg -i packages-microsoft-prod.deb
 rm packages-microsoft-prod.deb
 
@@ -77,8 +77,8 @@ rm packages-microsoft-prod.deb
 sudo apt-get update
 sudo apt-get install -y dotnet-sdk-8.0
 
-# Confirma a instalação exibindo a versão
-dotnet --version
+# Confirma a instalação exibindo a versão instalada
+dotnet --version  # saída esperada: 8.0.120 ou superior
 ```
 
 Após concluir esses passos, os comandos de build, testes e formatação estarão disponíveis no
