@@ -77,11 +77,13 @@ public sealed class AwsSesEmailSender : IEmailSender, IDisposable
             {
                 Simple = new Message
                 {
-                    Subject = new Content(subject),
+                    Subject = new Content { Data = subject },
                     Body = new Body
                     {
-                        Html = new Content(htmlBody),
-                        Text = string.IsNullOrWhiteSpace(textBody) ? null : new Content(textBody)
+                        Html = new Content { Data = htmlBody },
+                        Text = string.IsNullOrWhiteSpace(textBody)
+                            ? null
+                            : new Content { Data = textBody }
                     }
                 }
             }
