@@ -156,37 +156,7 @@ jobs:
         id: coverage
         if: ${{ always() && steps.test.outcome == 'success' }}
         run: |
-          python <<'PY'
-          import glob
-          import os
-          import xml.etree.ElementTree as ET
-
-          paths = glob.glob('TestResults/**/coverage.cobertura.xml', recursive=True)
-          if not paths:
-              raise SystemExit('Arquivo de cobertura não encontrado.')
-
-          tree = ET.parse(paths[0])
-          root = tree.getroot()
-          line_rate = root.get('line-rate') or '0'
-          coverage = round(float(line_rate) * 100, 2)
-          display = f"{coverage:.2f}".rstrip('0').rstrip('.')
-
-          if coverage >= 90:
-              color = 'brightgreen'
-          elif coverage >= 75:
-              color = 'green'
-          elif coverage >= 60:
-              color = 'yellow'
-          else:
-              color = 'red'
-
-          badge_label = display.replace('.', '%2E') + '%25'
-
-          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
-              fh.write(f"percent={display}\n")
-              fh.write(f"badge_label={badge_label}\n")
-              fh.write(f"badge_color={color}\n")
-          PY
+          python .github/scripts/extract_coverage.py
 
       - name: Publicar resumo
         if: always()
