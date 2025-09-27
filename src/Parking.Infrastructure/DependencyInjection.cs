@@ -1,16 +1,23 @@
 using System;
+using Amazon;
+using Amazon.Runtime;
+using Amazon.SimpleNotificationService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using ApplicationAuthentication = Parking.Application.Authentication;
 using ApplicationSecurity = Parking.Application.Abstractions.Security;
+using Parking.Application.Abstractions;
 using Parking.Domain.Repositories;
 using Parking.Infrastructure.Authentication;
 using Parking.Infrastructure.Persistence;
 using Parking.Infrastructure.Repositories;
+
+using Parking.Infrastructure.Messaging;
 using Parking.Infrastructure.ExternalServices.Cnpja;
 using Parking.Application.Abstractions;
+
 
 namespace Parking.Infrastructure;
 
@@ -34,6 +41,31 @@ public static class DependencyInjection
                 options => options.AccessTokenExpirationMinutes > 0,
                 "JWT expiration must be greater than zero.")
             .ValidateOnStart();
+
+        services
+            .AddOptions<AwsSmsOptions>()
+            .Bind(configuration.GetSection(AwsSmsOptions.SectionName))
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.Region),
+                "AWS SNS region must be provided.")
+            .ValidateOnStart();
+
+        services.AddSingleton<IAmazonSimpleNotificationService>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<AwsSmsOptions>>().Value;
+            var region = RegionEndpoint.GetBySystemName(options.Region);
+
+            if (!string.IsNullOrWhiteSpace(options.AccessKey)
+                && !string.IsNullOrWhiteSpace(options.SecretKey))
+            {
+                var credentials = new BasicAWSCredentials(options.AccessKey, options.SecretKey);
+                return new AmazonSimpleNotificationServiceClient(credentials, region);
+            }
+
+            return new AmazonSimpleNotificationServiceClient(region);
+        });
+
+        services.AddSingleton<ISmsSender, AwsSmsSender>();
 
         services.AddDbContext<ParkingDbContext>(options =>
         {
