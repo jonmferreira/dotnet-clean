@@ -1,39 +1,45 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using Parking.Application.Authentication;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Parking.Application.Abstractions.Security;
 using Parking.Domain.Entities;
-
+using ApplicationAuthentication = Parking.Application.Authentication;
+using ApplicationSecurity = Parking.Application.Abstractions.Security;
 
 namespace Parking.Infrastructure.Authentication;
 
-public sealed class JwtTokenGenerator : IJwtTokenGenerator
+public sealed class JwtTokenGenerator :
+    ApplicationAuthentication.IJwtTokenGenerator,
+    ApplicationSecurity.IJwtTokenGenerator
 {
-
     private static readonly TimeSpan DefaultLifetime = TimeSpan.FromHours(1);
+
     private readonly TimeProvider _timeProvider;
-    private readonly JwtOptions _options;
+    private readonly JwtOptions? _options;
 
     public JwtTokenGenerator(TimeProvider? timeProvider = null)
     {
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
-    public JwtTokenGenerator(IOptions<JwtOptions> options)
+    public JwtTokenGenerator(IOptions<JwtOptions> options, TimeProvider? timeProvider = null)
+        : this(options?.Value ?? throw new ArgumentNullException(nameof(options)), timeProvider)
     {
-        _options = options.Value ?? throw new ArgumentNullException(nameof(options));
+    }
+
+    public JwtTokenGenerator(JwtOptions options, TimeProvider? timeProvider = null)
+        : this(timeProvider)
+    {
+        _options = options ?? throw new ArgumentNullException(nameof(options));
         ValidateOptions(_options);
     }
 
-    public JwtTokenResult GenerateToken(
+    public ApplicationAuthentication.JwtTokenResult GenerateToken(
         Guid userId,
         string email,
         IReadOnlyCollection<string>? roles = null,
@@ -75,16 +81,25 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
             Convert.ToBase64String(payloadBytes),
             Convert.ToBase64String(signature));
 
-        return new JwtTokenResult(token, expiresAt, userId, normalizedEmail, sanitizedRoles);
-   }
+        return new ApplicationAuthentication.JwtTokenResult(
+            token,
+            expiresAt,
+            userId,
+            normalizedEmail,
+            sanitizedRoles);
+    }
 
- 
-
-    public JwtTokenResult GenerateToken(User user)
+    public ApplicationSecurity.JwtTokenResult GenerateToken(User user)
     {
         if (user is null)
         {
             throw new ArgumentNullException(nameof(user));
+        }
+
+        if (_options is null)
+        {
+            throw new InvalidOperationException(
+                "JWT options must be configured before generating tokens for users.");
         }
 
         var expiration = DateTimeOffset.UtcNow.AddMinutes(_options.AccessTokenExpirationMinutes);
@@ -110,7 +125,7 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
         var tokenHandler = new JwtSecurityTokenHandler();
         var accessToken = tokenHandler.WriteToken(token);
 
-        return new JwtTokenResult(accessToken, expiration);
+        return new ApplicationSecurity.JwtTokenResult(accessToken, expiration);
     }
 
     private static void ValidateOptions(JwtOptions options)
@@ -134,6 +149,5 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
         {
             throw new InvalidOperationException("JWT expiration must be greater than zero.");
         }
-
     }
 }

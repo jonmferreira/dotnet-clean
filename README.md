@@ -61,6 +61,29 @@ dotnet test
 
 Os testes cobrem o cálculo acumulativo de tarifas para garantir a regra de negócio proposta.
 
+## Instalando o .NET SDK no container
+
+Os comandos `dotnet build`, `dotnet test` e `dotnet format` dependem do CLI do .NET 8. Caso o
+ambiente do container não possua o SDK instalado, siga os passos abaixo (válidos para imagens
+baseadas em Debian/Ubuntu):
+
+```bash
+# Adiciona o repositório oficial da Microsoft (ajuste a versão se necessário)
+wget https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+
+# Atualiza a lista de pacotes e instala o SDK do .NET 8
+sudo apt-get update
+sudo apt-get install -y dotnet-sdk-8.0
+
+# Confirma a instalação exibindo a versão instalada
+dotnet --version  # saída esperada: 8.0.120 ou superior
+```
+
+Após concluir esses passos, os comandos de build, testes e formatação estarão disponíveis no
+container.
+
 ## Executando com Docker
 
 ### Imagem da API
