@@ -37,8 +37,8 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
         EnsureAssetExists(_defaultBackgroundImagePath, "new_background.jpg");
         EnsureAssetExists(_emptyStateBackgroundImagePath, "pronto_pra_comecar.png");
 
-        using var backgroundImage = Image.FromFile(_defaultBackgroundImagePath);
-        using var emptyStateBackground = Image.FromFile(_emptyStateBackgroundImagePath);
+        var backgroundImage = Image.FromFile(_defaultBackgroundImagePath);
+        var emptyStateBackground = Image.FromFile(_emptyStateBackgroundImagePath);
 
         if (ticketList.Count == 0)
         {
@@ -103,7 +103,7 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
     {
         EnsureAssetExists(_errorStateBackgroundImagePath, "erro_na_request.png");
 
-        using var errorBackground = Image.FromFile(_errorStateBackgroundImagePath);
+        var errorBackground = Image.FromFile(_errorStateBackgroundImagePath);
 
         return BuildSimpleDocument(errorBackground);
     }
