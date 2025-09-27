@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using System.Security.Cryptography;
 using Parking.Application.Abstractions.Security;
 
@@ -6,8 +8,8 @@ namespace Parking.Infrastructure.Authentication;
 public sealed class Pbkdf2PasswordHasher : IPasswordHasher
 {
     private const int SaltSize = 16; // 128 bits
-    private const int KeySize = 32; // 256 bits
-    private const int Iterations = 100_000;
+    private const int KeySize = 32;  // 256 bits
+    private const int DefaultIterations = 100_000;
 
     public string HashPassword(string password)
     {
@@ -16,10 +18,22 @@ public sealed class Pbkdf2PasswordHasher : IPasswordHasher
             throw new ArgumentException("Password must not be null or empty.", nameof(password));
         }
 
-        var salt = RandomNumberGenerator.GetBytes(SaltSize);
-        var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, HashAlgorithmName.SHA256, KeySize);
+        using var rng = RandomNumberGenerator.Create();
+        var salt = new byte[SaltSize];
+        rng.GetBytes(salt);
 
-        return string.Join('.', Iterations.ToString(), Convert.ToBase64String(salt), Convert.ToBase64String(hash));
+        var hash = Rfc2898DeriveBytes.Pbkdf2(
+            password,
+            salt,
+            DefaultIterations,
+            HashAlgorithmName.SHA256,
+            KeySize);
+
+        return string.Join(
+            ".",
+            DefaultIterations.ToString(CultureInfo.InvariantCulture),
+            Convert.ToBase64String(salt),
+            Convert.ToBase64String(hash));
     }
 
     public bool VerifyHashedPassword(string hashedPassword, string providedPassword)
@@ -29,27 +43,38 @@ public sealed class Pbkdf2PasswordHasher : IPasswordHasher
             return false;
         }
 
-        var parts = hashedPassword.Split('.');
+        var parts = hashedPassword.Split('.', StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length != 3)
         {
             return false;
         }
 
-        if (!int.TryParse(parts[0], out var iterations))
+        if (!int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var iterations))
         {
             return false;
         }
 
-        var salt = Convert.FromBase64String(parts[1]);
-        var hash = Convert.FromBase64String(parts[2]);
+        try
+        {
+            var salt = Convert.FromBase64String(parts[1]);
+            var expected = Convert.FromBase64String(parts[2]);
 
-        var computedHash = Rfc2898DeriveBytes.Pbkdf2(
-            providedPassword,
-            salt,
-            iterations,
-            HashAlgorithmName.SHA256,
-            hash.Length);
+            var actual = Rfc2898DeriveBytes.Pbkdf2(
+                providedPassword,
+                salt,
+                iterations,
+                HashAlgorithmName.SHA256,
+                expected.Length);
 
-        return CryptographicOperations.FixedTimeEquals(hash, computedHash);
+            return CryptographicOperations.FixedTimeEquals(expected, actual);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
     }
 }

@@ -4,6 +4,7 @@ using Parking.Application.Dtos;
 using Parking.Application.Mappings;
 using Parking.Domain.Entities;
 using Parking.Domain.Repositories;
+using Parking.Domain.Repositories.Filters;
 using Parking.Domain.Services;
 
 namespace Parking.Application.Services;
@@ -91,5 +92,13 @@ public sealed class ParkingTicketService : IParkingTicketService
     {
         var ticket = await _repository.GetByIdAsync(id, cancellationToken);
         return ticket?.ToDto();
+    }
+
+    public async Task<IReadOnlyCollection<ParkingTicketDto>> FilterTicketsAsync(ParkingTicketFilter filter, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(filter);
+
+        var tickets = await _repository.FilterAsync(filter, cancellationToken);
+        return tickets.Select(ticket => ticket.ToDto()).ToArray();
     }
 }

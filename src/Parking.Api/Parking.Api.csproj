@@ -12,6 +12,13 @@
     <PackageReference Include="QuestPDF" Version="2024.6.3" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.20" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.20" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Parking.Application\Parking.Application.csproj" />
     <ProjectReference Include="..\Parking.Infrastructure\Parking.Infrastructure.csproj" />
