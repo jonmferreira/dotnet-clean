@@ -52,6 +52,9 @@ A documentação interativa (Swagger) estará disponível em `https://localhost:
 - `GET /api/vehicleinspections/ticket/{ticketId}` – consulta o checklist vinculado a um ticket.
 - `GET /api/cnpj/{cnpj}` – consulta dados cadastrais de uma empresa via CNPJa Open API.
 
+Para exemplos de rotas focadas em cenários concorrentes e paralelos, consulte
+[`docs/concurrency-parallelism.md`](docs/concurrency-parallelism.md).
+
 Os checklists registram o estado visual do veículo (arranhões, itens perdidos, chave perdida e batidas fortes). Sempre que algum item for reprovado (`false`), é obrigatório informar a URL da foto de evidência correspondente.
 
 ## Testes
