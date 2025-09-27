@@ -1,0 +1,65 @@
+name: Build
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        id: restore
+        run: |
+          start=$(date +%s)
+          dotnet restore Parking.sln
+          end=$(date +%s)
+          duration=$((end - start))
+          printf "duration=%02d:%02d\n" $((duration/60)) $((duration%60)) >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        id: build_step
+        run: |
+          start=$(date +%s)
+          dotnet build Parking.sln --configuration Release --no-restore
+          end=$(date +%s)
+          duration=$((end - start))
+          printf "duration=%02d:%02d\n" $((duration/60)) $((duration%60)) >> "$GITHUB_OUTPUT"
+
+      - name: Publicar resumo
+        if: always()
+        env:
+          RESTORE_DURATION: ${{ steps.restore.outputs.duration }}
+          RESTORE_OUTCOME: ${{ steps.restore.outcome }}
+          BUILD_DURATION: ${{ steps.build_step.outputs.duration }}
+          BUILD_OUTCOME: ${{ steps.build_step.outcome }}
+        run: |
+          icon() {
+            case "$1" in
+              success) printf '✅' ;;
+              failure) printf '❌' ;;
+              cancelled|skipped) printf '⚠️' ;;
+              *) printf '⚠️' ;;
+            esac
+          }
+
+          restore_icon=$(icon "$RESTORE_OUTCOME")
+          build_icon=$(icon "$BUILD_OUTCOME")
+
+          {
+            echo "### Build"
+            echo ""
+            echo "| Descrição | Tempo | Resultado |"
+            echo "| --- | --- | --- |"
+            echo "| Restore | ${RESTORE_DURATION:-N/A} | ${restore_icon} |"
+            echo "| Build | ${BUILD_DURATION:-N/A} | ${build_icon} |"
+          } >> "$GITHUB_STEP_SUMMARY"

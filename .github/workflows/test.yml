@@ -1,0 +1,85 @@
+name: Testes
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Testes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        id: test_restore
+        run: |
+          start=$(date +%s)
+          dotnet restore Parking.sln
+          end=$(date +%s)
+          duration=$((end - start))
+          printf "duration=%02d:%02d\n" $((duration/60)) $((duration%60)) >> "$GITHUB_OUTPUT"
+
+      - name: Testes
+        id: test
+        run: |
+          start=$(date +%s)
+          dotnet test Parking.sln --configuration Release --results-directory TestResults --collect:"XPlat Code Coverage" --verbosity normal
+          end=$(date +%s)
+          duration=$((end - start))
+          printf "duration=%02d:%02d\n" $((duration/60)) $((duration%60)) >> "$GITHUB_OUTPUT"
+
+      - name: Extrair cobertura
+        id: coverage
+        if: ${{ always() && steps.test.outcome == 'success' }}
+        run: |
+          python .github/scripts/extract_coverage.py
+
+      - name: Publicar resumo
+        if: always()
+        env:
+          RESTORE_DURATION: ${{ steps.test_restore.outputs.duration }}
+          RESTORE_OUTCOME: ${{ steps.test_restore.outcome }}
+          TEST_DURATION: ${{ steps.test.outputs.duration }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          COVERAGE_PERCENT: ${{ steps.coverage.outputs.percent }}
+          COVERAGE_BADGE_LABEL: ${{ steps.coverage.outputs.badge_label }}
+          COVERAGE_BADGE_COLOR: ${{ steps.coverage.outputs.badge_color }}
+        run: |
+          icon() {
+            case "$1" in
+              success) printf '✅' ;;
+              failure) printf '❌' ;;
+              cancelled|skipped) printf '⚠️' ;;
+              *) printf '⚠️' ;;
+            esac
+          }
+
+          restore_icon=$(icon "$RESTORE_OUTCOME")
+          test_icon=$(icon "$TEST_OUTCOME")
+
+          {
+            echo "### Testes"
+            echo ""
+            echo "| Descrição | Tempo | Resultado |"
+            echo "| --- | --- | --- |"
+            echo "| Restore | ${RESTORE_DURATION:-N/A} | ${restore_icon} |"
+            echo "| Testes | ${TEST_DURATION:-N/A} | ${test_icon} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "$COVERAGE_PERCENT" ]; then
+            {
+              echo ""
+              echo "#### Cobertura"
+              echo ""
+              echo "| Coverage | Badge |"
+              echo "| --- | --- |"
+              echo "| ${COVERAGE_PERCENT}% | ![Coverage](https://img.shields.io/badge/Coverage-${COVERAGE_BADGE_LABEL}-${COVERAGE_BADGE_COLOR}) |"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
