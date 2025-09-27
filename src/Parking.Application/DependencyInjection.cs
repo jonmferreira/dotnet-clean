@@ -18,6 +18,8 @@ public static class DependencyInjection
 
         services.AddScoped<IAuthService, AuthService>();
 
+        services.AddScoped<IPasswordResetService, PasswordResetService>();
+
         services.AddScoped<ITicketDetailsService, TicketDetailsService>();
 
 
