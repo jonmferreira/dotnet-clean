@@ -19,6 +19,8 @@ public sealed class ParkingDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
 
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
