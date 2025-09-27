@@ -9,8 +9,12 @@ using Microsoft.Extensions.Options;
 using ApplicationAuthentication = Parking.Application.Authentication;
 using ApplicationSecurity = Parking.Application.Abstractions.Security;
 using Parking.Application.Abstractions;
+
+using Parking.Application.Options;
+
 using Parking.Domain.Repositories;
 using Parking.Infrastructure.Authentication;
+using Parking.Infrastructure.Email;
 using Parking.Infrastructure.Persistence;
 using Parking.Infrastructure.Repositories;
 
@@ -42,8 +46,30 @@ public static class DependencyInjection
                 "JWT expiration must be greater than zero.")
             .ValidateOnStart();
 
+
+              services.AddOptions<PasswordResetOptions>()
+            .Bind(configuration.GetSection("PasswordReset"))
+            .Validate(
+                options => options.TokenExpirationMinutes > 0,
+                "Password reset token expiration must be greater than zero.")
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.ResetUrl),
+                "Password reset URL must be configured.")
+            .ValidateOnStart();
+
         services
-            .AddOptions<AwsSmsOptions>()
+            .AddOptions<AwsSesOptions>()
+            .Bind(configuration.GetSection("Email:AwsSes"))
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.Region),
+                "AWS region must be configured for SES.")
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.FromAddress),
+                "SES sender address must be configured.")
+            .ValidateOnStart();
+
+
+            services..AddOptions<AwsSmsOptions>()
             .Bind(configuration.GetSection(AwsSmsOptions.SectionName))
             .Validate(
                 options => !string.IsNullOrWhiteSpace(options.Region),
@@ -122,6 +148,7 @@ public static class DependencyInjection
         services.AddScoped<IMonthlyTargetRepository, MonthlyTargetRepository>();
         services.AddScoped<IVehicleInspectionRepository, VehicleInspectionRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
 
         services.AddSingleton<Pbkdf2PasswordHasher>();
         services.AddSingleton<ApplicationSecurity.IPasswordHasher>(
@@ -132,6 +159,8 @@ public static class DependencyInjection
             static sp => sp.GetRequiredService<JwtTokenGenerator>());
         services.AddSingleton<ApplicationAuthentication.IJwtTokenGenerator>(
             static sp => sp.GetRequiredService<JwtTokenGenerator>());
+
+        services.AddSingleton<IEmailSender, AwsSesEmailSender>();
 
         return services;
     }
