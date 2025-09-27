@@ -2,14 +2,11 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Parking.Application.Authentication;
-
 using Parking.Application.Abstractions.Security;
-
 using Parking.Domain.Repositories;
+using Parking.Infrastructure.Authentication;
 using Parking.Infrastructure.Persistence;
 using Parking.Infrastructure.Repositories;
-using Parking.Infrastructure.Authentication;
 
 namespace Parking.Infrastructure;
 
@@ -56,7 +53,6 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
 
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
-
 
         return services;
     }
