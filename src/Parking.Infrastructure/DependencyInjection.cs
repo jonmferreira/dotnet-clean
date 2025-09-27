@@ -5,10 +5,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using ApplicationAuthentication = Parking.Application.Authentication;
 using ApplicationSecurity = Parking.Application.Abstractions.Security;
+using Parking.Application.Abstractions;
 using Parking.Domain.Repositories;
 using Parking.Infrastructure.Authentication;
 using Parking.Infrastructure.Persistence;
 using Parking.Infrastructure.Repositories;
+using Parking.Infrastructure.ExternalServices;
 
 namespace Parking.Infrastructure;
 
@@ -71,6 +73,11 @@ public static class DependencyInjection
             static sp => sp.GetRequiredService<JwtTokenGenerator>());
         services.AddSingleton<ApplicationAuthentication.IJwtTokenGenerator>(
             static sp => sp.GetRequiredService<JwtTokenGenerator>());
+
+        services.AddHttpClient<ICepLookupService, ViaCepLookupService>(client =>
+        {
+            client.BaseAddress = new Uri("https://viacep.com.br/");
+        });
 
         return services;
     }
