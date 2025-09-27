@@ -6,26 +6,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using ApplicationAuthentication = Parking.Application.Authentication;
-using ApplicationSecurity = Parking.Application.Abstractions.Security;
 using Parking.Application.Abstractions;
-
-
 using Parking.Application.Options;
-
-
 using Parking.Domain.Repositories;
 using Parking.Infrastructure.Authentication;
 using Parking.Infrastructure.Email;
+using Parking.Infrastructure.ExternalServices;
+using Parking.Infrastructure.ExternalServices.Cnpja;
+using Parking.Infrastructure.Messaging;
 using Parking.Infrastructure.Persistence;
 using Parking.Infrastructure.Repositories;
-using Parking.Infrastructure.ExternalServices;
-
-using Parking.Infrastructure.Messaging;
-using Parking.Infrastructure.ExternalServices.Cnpja;
-using Parking.Application.Abstractions;
-
-
+using ApplicationAuthentication = Parking.Application.Authentication;
+using ApplicationSecurity = Parking.Application.Abstractions.Security;
 namespace Parking.Infrastructure;
 
 public static class DependencyInjection
@@ -49,8 +41,8 @@ public static class DependencyInjection
                 "JWT expiration must be greater than zero.")
             .ValidateOnStart();
 
-
-              services.AddOptions<PasswordResetOptions>()
+        services
+            .AddOptions<PasswordResetOptions>()
             .Bind(configuration.GetSection("PasswordReset"))
             .Validate(
                 options => options.TokenExpirationMinutes > 0,
@@ -71,8 +63,8 @@ public static class DependencyInjection
                 "SES sender address must be configured.")
             .ValidateOnStart();
 
-
-            services..AddOptions<AwsSmsOptions>()
+        services
+            .AddOptions<AwsSmsOptions>()
             .Bind(configuration.GetSection(AwsSmsOptions.SectionName))
             .Validate(
                 options => !string.IsNullOrWhiteSpace(options.Region),
