@@ -11,8 +11,9 @@ namespace Parking.Api.Services;
 public sealed class TicketPdfExporter : ITicketPdfExporter
 {
     private static readonly CultureInfo Culture = new("pt-BR");
-    private readonly string _backgroundImagePath;
-    private readonly string _emptyStateImagePath;
+    private readonly string _defaultBackgroundImagePath;
+    private readonly string _emptyStateBackgroundImagePath;
+    private readonly string _errorStateBackgroundImagePath;
 
     public TicketPdfExporter(IHostEnvironment hostEnvironment)
     {
@@ -22,8 +23,9 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
         }
 
         var assetsDirectory = Path.Combine(hostEnvironment.ContentRootPath, "Assets");
-        _backgroundImagePath = Path.Combine(assetsDirectory, "export-background.png");
-        _emptyStateImagePath = Path.Combine(assetsDirectory, "no-data.png");
+        _defaultBackgroundImagePath = Path.Combine(assetsDirectory, "new_background.jpg");
+        _emptyStateBackgroundImagePath = Path.Combine(assetsDirectory, "pronto_pra_comecar.png");
+        _errorStateBackgroundImagePath = Path.Combine(assetsDirectory, "erro_na_request.png");
     }
 
     public byte[] Generate(IReadOnlyCollection<ParkingTicketDto> tickets)
@@ -32,11 +34,16 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
             .OrderByDescending(ticket => ticket.EntryAt)
             .ToList();
 
-        EnsureAssetExists(_backgroundImagePath, "export-background.png");
-        EnsureAssetExists(_emptyStateImagePath, "no-data.png");
+        EnsureAssetExists(_defaultBackgroundImagePath, "new_background.jpg");
+        EnsureAssetExists(_emptyStateBackgroundImagePath, "pronto_pra_comecar.png");
 
-        var backgroundImage = Image.FromFile(_backgroundImagePath);
-        var emptyStateImage = Image.FromFile(_emptyStateImagePath);
+        using var backgroundImage = Image.FromFile(_defaultBackgroundImagePath);
+        using var emptyStateBackground = Image.FromFile(_emptyStateBackgroundImagePath);
+
+        if (ticketList.Count == 0)
+        {
+            return BuildSimpleDocument(emptyStateBackground);
+        }
 
         return Document.Create(document =>
         {
@@ -50,12 +57,6 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
                 page.Background().Image(backgroundImage).FitArea();
                 page.Content().PaddingHorizontal(15).Element(container =>
                 {
-                    if (ticketList.Count == 0)
-                    {
-                        BuildEmptyState(container, emptyStateImage);
-                        return;
-                    }
-
                     container.Column(column =>
                     {
                         column.Spacing(14);
@@ -97,6 +98,25 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
             });
         }).GeneratePdf();
     }
+
+    public byte[] GenerateError()
+    {
+        EnsureAssetExists(_errorStateBackgroundImagePath, "erro_na_request.png");
+
+        using var errorBackground = Image.FromFile(_errorStateBackgroundImagePath);
+
+        return BuildSimpleDocument(errorBackground);
+    }
+
+    private static byte[] BuildSimpleDocument(Image background)
+        => Document.Create(document =>
+        {
+            document.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Background().Image(background).FitArea();
+            });
+        }).GeneratePdf();
 
     private static void EnsureAssetExists(string assetPath, string assetFileName)
     {
@@ -143,30 +163,6 @@ public sealed class TicketPdfExporter : ITicketPdfExporter
                 table.Cell().Element(ContentCell).Text(FormatAmount(ticket.TotalAmount));
                 table.Cell().Element(ContentCell).Text(ticket.ExitAt.HasValue ? "Finalizado" : "Ativo");
             }
-        });
-    }
-
-    private static void BuildEmptyState(IContainer container, Image emptyStateImage)
-    {
-        container.Column(column =>
-        {
-            column.Spacing(25);
-            column.Item().AlignCenter().Element(imageContainer =>
-            {
-                imageContainer
-                    .Width(320)
-                    .Height(320)
-                    .Image(emptyStateImage)
-                    .FitArea();
-            });
-            column.Item().AlignCenter().Text("Sem dados para exportar")
-                .FontSize(18)
-                .SemiBold()
-                .FontColor(Colors.Blue.Darken3);
-
-            column.Item().AlignCenter().Text("Cadastre tickets para gerar um relatório em PDF.")
-                .FontSize(12)
-                .FontColor(Colors.Grey.Darken2);
         });
     }
 

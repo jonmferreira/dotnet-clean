@@ -83,10 +83,23 @@ public sealed class TicketsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportAsPdfAsync(CancellationToken cancellationToken)
     {
-        var tickets = await _parkingTicketService.GetAllTicketsAsync(cancellationToken);
-        var pdfBytes = _ticketPdfExporter.Generate(tickets);
-        var fileName = $"tickets-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.pdf";
-        return File(pdfBytes, "application/pdf", fileName);
+        try
+        {
+            var tickets = await _parkingTicketService.GetAllTicketsAsync(cancellationToken);
+            var pdfBytes = _ticketPdfExporter.Generate(tickets);
+            var fileName = $"tickets-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.pdf";
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            var pdfBytes = _ticketPdfExporter.GenerateError();
+            var fileName = $"tickets-error-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.pdf";
+            return File(pdfBytes, "application/pdf", fileName);
+        }
     }
 
     [HttpPost("filter")]
